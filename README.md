@@ -6,6 +6,30 @@ A classic Pong game implementation using the MonoGame framework.
 
 This is a recreation of the classic Pong arcade game built with MonoGame. The project demonstrates fundamental game development concepts including sprite rendering, collision detection, input handling, and game state management.
 
+## Pong Game Controls
+
+### Player 1 (Left Paddle)
+
+- **W** - Move paddle up
+- **S** - Move paddle down
+
+### Player 2 (Right Paddle)
+
+- **Up Arrow** - Move paddle up
+- **Down Arrow** - Move paddle down
+
+### General Controls
+
+- **ESC** - Exit game
+- **SPACE** - Restart game (when game over)
+
+### Game Rules
+
+- First player to reach **11 points** wins
+- Ball speeds up slightly with each paddle hit
+- Ball angle changes based on where it hits the paddle
+- Score appears at the top of the screen
+
 ## Prerequisites
 
 - [.NET 9.0 SDK](https://dotnet.microsoft.com/download) or later
