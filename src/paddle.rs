@@ -6,8 +6,10 @@ pub struct PaddlePlugin;
 
 impl Plugin for PaddlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_paddles)
-            .add_systems(Update, move_player_one.run_if(in_state(GameState::Playing)));
+        app.add_systems(Startup, spawn_paddles).add_systems(
+            Update,
+            (move_player_one, move_player_two).run_if(in_state(GameState::Playing)),
+        );
     }
 }
 
@@ -54,6 +56,11 @@ fn spawn_paddles(mut commands: Commands) {
     ));
 }
 
+fn move_paddle(transform: &mut Transform, up: bool, down: bool, delta_secs: f32) {
+    let direction = if up { 1.0 } else { 0.0 } + if down { -1.0 } else { 0.0 };
+    transform.translation.y += direction * PADDLE_SPEED * delta_secs;
+}
+
 fn move_player_one(
     keyboard: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
@@ -63,15 +70,29 @@ fn move_player_one(
         if !matches!(player, Player::One) {
             continue;
         }
+        move_paddle(
+            &mut transform,
+            keyboard.pressed(KeyCode::KeyW),
+            keyboard.pressed(KeyCode::KeyS),
+            time.delta_secs(),
+        );
+    }
+}
 
-        let mut direction = 0.0_f32;
-        if keyboard.pressed(KeyCode::KeyW) || keyboard.pressed(KeyCode::ArrowUp) {
-            direction += 1.0;
+fn move_player_two(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    time: Res<Time>,
+    mut query: Query<(&Player, &mut Transform), With<Paddle>>,
+) {
+    for (player, mut transform) in &mut query {
+        if !matches!(player, Player::Two) {
+            continue;
         }
-        if keyboard.pressed(KeyCode::KeyS) || keyboard.pressed(KeyCode::ArrowDown) {
-            direction -= 1.0;
-        }
-
-        transform.translation.y += direction * PADDLE_SPEED * time.delta_secs();
+        move_paddle(
+            &mut transform,
+            keyboard.pressed(KeyCode::ArrowUp),
+            keyboard.pressed(KeyCode::ArrowDown),
+            time.delta_secs(),
+        );
     }
 }
