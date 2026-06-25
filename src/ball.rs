@@ -1,12 +1,14 @@
 use bevy::prelude::*;
 use rand::RngExt;
 
+use crate::GameState;
 
 pub struct BallPlugin;
 
 impl Plugin for BallPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_ball);
+        app.add_systems(Startup, spawn_ball)
+            .add_systems(Update, move_ball.run_if(in_state(GameState::Playing)));
     }
 }
 
@@ -18,6 +20,12 @@ pub struct Ball;
 
 #[derive(Component)]
 pub struct Velocity(pub Vec2);
+
+fn move_ball(time: Res<Time>, mut query: Query<(&Velocity, &mut Transform), With<Ball>>) {
+    for (velocity, mut transform) in &mut query {
+        transform.translation += velocity.0.extend(0.0) * time.delta_secs();
+    }
+}
 
 pub fn spawn_ball(mut commands: Commands) {
     let mut rng = rand::rng();
