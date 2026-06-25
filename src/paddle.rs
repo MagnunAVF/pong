@@ -38,4 +38,16 @@ fn spawn_paddles(mut commands: Commands) {
         },
         Transform::from_xyz(-half_width + PADDLE_X_OFFSET, 0.0, 0.0),
     ));
+
+    // Player 2 / AI — right paddle
+    commands.spawn((
+        Paddle,
+        Player::Two,
+        Sprite {
+            color: Color::WHITE,
+            custom_size: Some(size),
+            ..default()
+        },
+        Transform::from_xyz(half_width - PADDLE_X_OFFSET, 0.0, 0.0),
+    ));
 }
