@@ -1,18 +1,20 @@
 use bevy::prelude::*;
 
-use crate::WINDOW_WIDTH;
+use crate::{GameState, WINDOW_WIDTH};
 
 pub struct PaddlePlugin;
 
 impl Plugin for PaddlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_paddles);
+        app.add_systems(Startup, spawn_paddles)
+            .add_systems(Update, move_player_one.run_if(in_state(GameState::Playing)));
     }
 }
 
 pub const PADDLE_WIDTH: f32 = 10.0;
 pub const PADDLE_HEIGHT: f32 = 80.0;
 const PADDLE_X_OFFSET: f32 = 40.0;
+const PADDLE_SPEED: f32 = 400.0;
 
 #[derive(Component)]
 pub struct Paddle;
@@ -50,4 +52,26 @@ fn spawn_paddles(mut commands: Commands) {
         },
         Transform::from_xyz(half_width - PADDLE_X_OFFSET, 0.0, 0.0),
     ));
+}
+
+fn move_player_one(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    time: Res<Time>,
+    mut query: Query<(&Player, &mut Transform), With<Paddle>>,
+) {
+    for (player, mut transform) in &mut query {
+        if !matches!(player, Player::One) {
+            continue;
+        }
+
+        let mut direction = 0.0_f32;
+        if keyboard.pressed(KeyCode::KeyW) || keyboard.pressed(KeyCode::ArrowUp) {
+            direction += 1.0;
+        }
+        if keyboard.pressed(KeyCode::KeyS) || keyboard.pressed(KeyCode::ArrowDown) {
+            direction -= 1.0;
+        }
+
+        transform.translation.y += direction * PADDLE_SPEED * time.delta_secs();
+    }
 }

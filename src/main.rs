@@ -15,9 +15,9 @@ pub const WINDOW_WIDTH: u32 = 800;
 pub const WINDOW_HEIGHT: u32 = 600;
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
-enum GameState {
-    #[default]
+pub enum GameState {
     Menu,
+    #[default]
     Playing,
     Paused,
     GameOver,
