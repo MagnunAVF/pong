@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
-use crate::{GameState, WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::ui::WALL_THICKNESS;
+use crate::{GameState, WINDOW_HEIGHT, WINDOW_WIDTH};
 
 pub struct PaddlePlugin;
 
