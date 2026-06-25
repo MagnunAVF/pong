@@ -34,6 +34,7 @@ fn main() {
             }),
             ..default()
         }))
+        .insert_resource(ClearColor(Color::BLACK))
         .init_state::<GameState>()
         .add_plugins((
             BallPlugin,
@@ -42,5 +43,10 @@ fn main() {
             ScorePlugin,
             UiPlugin,
         ))
+        .add_systems(Startup, setup_camera)
         .run();
+}
+
+fn setup_camera(mut commands: Commands) {
+    commands.spawn(Camera2d);
 }
