@@ -1,4 +1,15 @@
+mod ball;
+mod collision;
+mod paddle;
+mod score;
+mod ui;
+
+use ball::BallPlugin;
 use bevy::{prelude::*, window::WindowResolution};
+use collision::CollisionPlugin;
+use paddle::PaddlePlugin;
+use score::ScorePlugin;
+use ui::UiPlugin;
 
 const WINDOW_WIDTH: u32 = 800;
 const WINDOW_HEIGHT: u32 = 600;
@@ -24,5 +35,12 @@ fn main() {
             ..default()
         }))
         .init_state::<GameState>()
+        .add_plugins((
+            BallPlugin,
+            CollisionPlugin,
+            PaddlePlugin,
+            ScorePlugin,
+            UiPlugin,
+        ))
         .run();
 }
