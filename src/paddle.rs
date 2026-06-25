@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
-use crate::{GameState, WINDOW_WIDTH};
+use crate::{GameState, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::ui::WALL_THICKNESS;
 
 pub struct PaddlePlugin;
 
@@ -8,7 +9,9 @@ impl Plugin for PaddlePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_paddles).add_systems(
             Update,
-            (move_player_one, move_player_two).run_if(in_state(GameState::Playing)),
+            (move_player_one, move_player_two, clamp_paddles)
+                .chain()
+                .run_if(in_state(GameState::Playing)),
         );
     }
 }
@@ -94,5 +97,15 @@ fn move_player_two(
             keyboard.pressed(KeyCode::ArrowDown),
             time.delta_secs(),
         );
+    }
+}
+
+fn clamp_paddles(mut query: Query<&mut Transform, With<Paddle>>) {
+    let half_height = WINDOW_HEIGHT as f32 / 2.0;
+    let min_y = -half_height + WALL_THICKNESS + PADDLE_HEIGHT / 2.0;
+    let max_y = half_height - WALL_THICKNESS - PADDLE_HEIGHT / 2.0;
+
+    for mut transform in &mut query {
+        transform.translation.y = transform.translation.y.clamp(min_y, max_y);
     }
 }
