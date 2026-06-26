@@ -14,12 +14,15 @@ impl Plugin for UiPlugin {
         .add_systems(OnEnter(GameState::Menu), spawn_menu)
         .add_systems(OnExit(GameState::Menu), despawn_menu)
         .add_systems(Update, handle_menu_input.run_if(in_state(GameState::Menu)))
+        .add_systems(
+            Update,
+            handle_playing_input.run_if(in_state(GameState::Playing)),
+        )
         .add_systems(OnEnter(GameState::Paused), spawn_pause_screen)
         .add_systems(OnExit(GameState::Paused), despawn_pause_screen)
         .add_systems(
             Update,
-            handle_pause_input
-                .run_if(in_state(GameState::Playing).or_else(in_state(GameState::Paused))),
+            handle_pause_input.run_if(in_state(GameState::Paused)),
         )
         .add_systems(OnEnter(GameState::GameOver), spawn_game_over_screen)
         .add_systems(OnExit(GameState::GameOver), despawn_game_over_screen)
@@ -120,12 +123,28 @@ fn spawn_menu(mut commands: Commands) {
                 TextColor(Color::WHITE),
             ));
             parent.spawn((
-                Text::new("Press Enter to Start"),
+                Text::new("Enter: Start   -   Esc: Quit"),
                 TextFont {
-                    font_size: FontSize::Px(32.0),
+                    font_size: FontSize::Px(28.0),
                     ..default()
                 },
                 TextColor(Color::WHITE),
+            ));
+            parent.spawn((
+                Text::new("In-game:  P to Pause  -  Esc to Main Menu"),
+                TextFont {
+                    font_size: FontSize::Px(20.0),
+                    ..default()
+                },
+                TextColor(Color::srgb(0.7, 0.7, 0.7)),
+            ));
+            parent.spawn((
+                Text::new("Player 1: W / S        Player 2: Up / Down"),
+                TextFont {
+                    font_size: FontSize::Px(20.0),
+                    ..default()
+                },
+                TextColor(Color::srgb(0.7, 0.7, 0.7)),
             ));
         });
 }
@@ -142,6 +161,21 @@ fn handle_menu_input(
 ) {
     if keyboard.just_pressed(KeyCode::Enter) {
         next_state.set(GameState::Playing);
+    }
+    if keyboard.just_pressed(KeyCode::Escape) {
+        std::process::exit(0);
+    }
+}
+
+fn handle_playing_input(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if keyboard.just_pressed(KeyCode::KeyP) {
+        next_state.set(GameState::Paused);
+    }
+    if keyboard.just_pressed(KeyCode::Escape) {
+        next_state.set(GameState::Menu);
     }
 }
 
@@ -174,7 +208,7 @@ fn spawn_pause_screen(mut commands: Commands) {
                 TextColor(Color::WHITE),
             ));
             parent.spawn((
-                Text::new("Press Escape to Resume"),
+                Text::new("P: Resume   -   Esc: Main Menu"),
                 TextFont {
                     font_size: FontSize::Px(28.0),
                     ..default()
@@ -192,15 +226,13 @@ fn despawn_pause_screen(mut commands: Commands, query: Query<Entity, With<PauseS
 
 fn handle_pause_input(
     keyboard: Res<ButtonInput<KeyCode>>,
-    state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
+    if keyboard.just_pressed(KeyCode::KeyP) {
+        next_state.set(GameState::Playing);
+    }
     if keyboard.just_pressed(KeyCode::Escape) {
-        match state.get() {
-            GameState::Playing => next_state.set(GameState::Paused),
-            GameState::Paused => next_state.set(GameState::Playing),
-            _ => {}
-        }
+        next_state.set(GameState::Menu);
     }
 }
 
