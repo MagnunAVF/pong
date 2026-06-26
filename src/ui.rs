@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::score::Winner;
 use crate::{GameState, InGame, WINDOW_HEIGHT, WINDOW_WIDTH};
 
 pub struct UiPlugin;
@@ -19,6 +20,12 @@ impl Plugin for UiPlugin {
             Update,
             handle_pause_input
                 .run_if(in_state(GameState::Playing).or_else(in_state(GameState::Paused))),
+        )
+        .add_systems(OnEnter(GameState::GameOver), spawn_game_over_screen)
+        .add_systems(OnExit(GameState::GameOver), despawn_game_over_screen)
+        .add_systems(
+            Update,
+            handle_game_over_input.run_if(in_state(GameState::GameOver)),
         );
     }
 }
@@ -194,5 +201,65 @@ fn handle_pause_input(
             GameState::Paused => next_state.set(GameState::Playing),
             _ => {}
         }
+    }
+}
+
+// --- Game over screen ---
+
+#[derive(Component)]
+struct GameOverScreen;
+
+fn spawn_game_over_screen(mut commands: Commands, winner: Res<Winner>) {
+    let winner_text = match &winner.0 {
+        Some(crate::ball::Scorer::Player1) => "Player 1 Wins!",
+        Some(crate::ball::Scorer::Player2) => "Player 2 Wins!",
+        None => "It's a Draw!",
+    };
+
+    commands
+        .spawn((
+            GameOverScreen,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                row_gap: Val::Px(20.0),
+                ..default()
+            },
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new(winner_text),
+                TextFont {
+                    font_size: FontSize::Px(72.0),
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+            ));
+            parent.spawn((
+                Text::new("Press R to Restart"),
+                TextFont {
+                    font_size: FontSize::Px(28.0),
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+            ));
+        });
+}
+
+fn despawn_game_over_screen(mut commands: Commands, query: Query<Entity, With<GameOverScreen>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
+    }
+}
+
+fn handle_game_over_input(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if keyboard.just_pressed(KeyCode::KeyR) {
+        next_state.set(GameState::Menu);
     }
 }
