@@ -8,6 +8,7 @@ pub struct ScorePlugin;
 impl Plugin for ScorePlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Score>()
+            .init_resource::<Winner>()
             .add_observer(on_point_scored)
             .add_systems(Startup, spawn_score_hud)
             .add_systems(Update, update_score_hud)
@@ -15,11 +16,17 @@ impl Plugin for ScorePlugin {
     }
 }
 
+pub const WIN_SCORE: u32 = 7;
+
 #[derive(Resource, Default, Debug)]
 pub struct Score {
     pub player1: u32,
     pub player2: u32,
 }
+
+/// Tracks which player won. Set when transitioning to GameOver, cleared on Menu reset.
+#[derive(Resource, Default, Debug)]
+pub struct Winner(pub Option<Scorer>);
 
 #[derive(Component)]
 enum ScoreDisplay {
@@ -72,13 +79,27 @@ fn update_score_hud(score: Res<Score>, mut query: Query<(&ScoreDisplay, &mut Tex
     }
 }
 
-fn on_point_scored(trigger: On<BallExited>, mut score: ResMut<Score>) {
+fn on_point_scored(
+    trigger: On<BallExited>,
+    mut score: ResMut<Score>,
+    mut winner: ResMut<Winner>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
     match trigger.event().scorer {
         Scorer::Player1 => score.player1 += 1,
         Scorer::Player2 => score.player2 += 1,
     }
+
+    if score.player1 >= WIN_SCORE {
+        winner.0 = Some(Scorer::Player1);
+        next_state.set(GameState::GameOver);
+    } else if score.player2 >= WIN_SCORE {
+        winner.0 = Some(Scorer::Player2);
+        next_state.set(GameState::GameOver);
+    }
 }
 
-fn reset_score(mut score: ResMut<Score>) {
+fn reset_score(mut score: ResMut<Score>, mut winner: ResMut<Winner>) {
     *score = Score::default();
+    winner.0 = None;
 }
