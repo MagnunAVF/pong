@@ -66,9 +66,13 @@ fn check_ball_out(mut commands: Commands, query: Query<&Transform, With<Ball>>) 
     for transform in &query {
         let x = transform.translation.x;
         if x > half_width {
-            commands.trigger(BallExited { scorer: Scorer::Player1 });
+            commands.trigger(BallExited {
+                scorer: Scorer::Player1,
+            });
         } else if x < -half_width {
-            commands.trigger(BallExited { scorer: Scorer::Player2 });
+            commands.trigger(BallExited {
+                scorer: Scorer::Player2,
+            });
         }
     }
 }
