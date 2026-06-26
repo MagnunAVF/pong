@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::GameState;
-use crate::ball::{BALL_SIZE, Ball, Velocity};
+use crate::ball::{BALL_SIZE, BALL_SPEED, Ball, Velocity};
 use crate::paddle::{PADDLE_HEIGHT, PADDLE_WIDTH, Paddle, Player};
 
 pub struct CollisionPlugin;
@@ -12,8 +12,20 @@ impl Plugin for CollisionPlugin {
     }
 }
 
+const SPEED_INCREASE: f32 = 1.05;
+const MAX_SPEED: f32 = BALL_SPEED * 2.0;
+
 fn aabb_overlap(a: Vec2, a_half: Vec2, b: Vec2, b_half: Vec2) -> bool {
     (a.x - b.x).abs() < a_half.x + b_half.x && (a.y - b.y).abs() < a_half.y + b_half.y
+}
+
+fn accelerate(velocity: &mut Velocity) {
+    let increased = velocity.0 * SPEED_INCREASE;
+    velocity.0 = if increased.length() > MAX_SPEED {
+        increased.normalize() * MAX_SPEED
+    } else {
+        increased
+    };
 }
 
 fn ball_vs_paddles(
@@ -40,11 +52,13 @@ fn ball_vs_paddles(
             Player::One if velocity.0.x < 0.0 => {
                 velocity.0.x = -velocity.0.x;
                 ball_tf.translation.x = paddle_pos.x + paddle_half.x + ball_half.x;
+                accelerate(&mut velocity);
             }
             // Ball approaching from the left of the right paddle
             Player::Two if velocity.0.x > 0.0 => {
                 velocity.0.x = -velocity.0.x;
                 ball_tf.translation.x = paddle_pos.x - paddle_half.x - ball_half.x;
+                accelerate(&mut velocity);
             }
             _ => {}
         }
