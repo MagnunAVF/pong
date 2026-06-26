@@ -1,18 +1,19 @@
 use bevy::prelude::*;
 
 use crate::ui::WALL_THICKNESS;
-use crate::{GameState, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::{GameState, InGame, WINDOW_HEIGHT, WINDOW_WIDTH};
 
 pub struct PaddlePlugin;
 
 impl Plugin for PaddlePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_paddles).add_systems(
-            Update,
-            (move_player_one, move_player_two, clamp_paddles)
-                .chain()
-                .run_if(in_state(GameState::Playing)),
-        );
+        app.add_systems(OnEnter(GameState::Playing), spawn_paddles)
+            .add_systems(
+                Update,
+                (move_player_one, move_player_two, clamp_paddles)
+                    .chain()
+                    .run_if(in_state(GameState::Playing)),
+            );
     }
 }
 
@@ -36,6 +37,7 @@ fn spawn_paddles(mut commands: Commands) {
 
     // Player 1 — left paddle
     commands.spawn((
+        InGame,
         Paddle,
         Player::One,
         Sprite {
@@ -48,6 +50,7 @@ fn spawn_paddles(mut commands: Commands) {
 
     // Player 2 / AI — right paddle
     commands.spawn((
+        InGame,
         Paddle,
         Player::Two,
         Sprite {

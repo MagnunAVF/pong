@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
-use crate::GameState;
 use crate::ball::{BallExited, Scorer};
+use crate::{GameState, InGame};
 
 pub struct ScorePlugin;
 
@@ -10,7 +10,7 @@ impl Plugin for ScorePlugin {
         app.init_resource::<Score>()
             .init_resource::<Winner>()
             .add_observer(on_point_scored)
-            .add_systems(Startup, spawn_score_hud)
+            .add_systems(OnEnter(GameState::Playing), spawn_score_hud)
             .add_systems(Update, update_score_hud)
             .add_systems(OnEnter(GameState::Menu), reset_score);
     }
@@ -42,6 +42,7 @@ fn spawn_score_hud(mut commands: Commands) {
 
     // Player 1 score — left quarter
     commands.spawn((
+        InGame,
         ScoreDisplay::Player1,
         Text::new("0"),
         text_font.clone(),
@@ -56,6 +57,7 @@ fn spawn_score_hud(mut commands: Commands) {
 
     // Player 2 score — right quarter
     commands.spawn((
+        InGame,
         ScoreDisplay::Player2,
         Text::new("0"),
         text_font,

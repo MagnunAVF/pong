@@ -16,12 +16,17 @@ pub const WINDOW_HEIGHT: u32 = 600;
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum GameState {
-    Menu,
     #[default]
+    Menu,
     Playing,
     Paused,
     GameOver,
 }
+
+/// Marker for every entity that only exists during a game session.
+/// All InGame entities are despawned when returning to Menu.
+#[derive(Component)]
+pub struct InGame;
 
 fn main() {
     App::new()
@@ -44,9 +49,16 @@ fn main() {
             UiPlugin,
         ))
         .add_systems(Startup, setup_camera)
+        .add_systems(OnEnter(GameState::Menu), despawn_game_entities)
         .run();
 }
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
+}
+
+fn despawn_game_entities(mut commands: Commands, query: Query<Entity, With<InGame>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
+    }
 }

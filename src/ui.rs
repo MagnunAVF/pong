@@ -1,12 +1,18 @@
 use bevy::prelude::*;
 
-use crate::{WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::{GameState, InGame, WINDOW_HEIGHT, WINDOW_WIDTH};
 
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (spawn_center_line, spawn_walls));
+        app.add_systems(
+            OnEnter(GameState::Playing),
+            (spawn_center_line, spawn_walls),
+        )
+        .add_systems(OnEnter(GameState::Menu), spawn_menu)
+        .add_systems(OnExit(GameState::Menu), despawn_menu)
+        .add_systems(Update, handle_menu_input.run_if(in_state(GameState::Menu)));
     }
 }
 
@@ -24,6 +30,7 @@ fn spawn_center_line(mut commands: Commands) {
     for i in 0..num_dashes {
         let y = -half_height + (i as f32) * period + DASH_HEIGHT / 2.0;
         commands.spawn((
+            InGame,
             Sprite {
                 color: Color::WHITE,
                 custom_size: Some(Vec2::new(DASH_WIDTH, DASH_HEIGHT)),
@@ -48,6 +55,7 @@ fn spawn_walls(mut commands: Commands) {
     for sign in [-1.0_f32, 1.0] {
         let y = sign * (half_height - WALL_THICKNESS / 2.0);
         commands.spawn((
+            InGame,
             Wall,
             Sprite {
                 color: Color::WHITE,
@@ -56,5 +64,59 @@ fn spawn_walls(mut commands: Commands) {
             },
             Transform::from_xyz(0.0, y, 0.0),
         ));
+    }
+}
+
+// --- Main menu ---
+
+#[derive(Component)]
+struct MenuScreen;
+
+fn spawn_menu(mut commands: Commands) {
+    commands
+        .spawn((
+            MenuScreen,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                row_gap: Val::Px(24.0),
+                ..default()
+            },
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new("PONG"),
+                TextFont {
+                    font_size: FontSize::Px(96.0),
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+            ));
+            parent.spawn((
+                Text::new("Press Enter to Start"),
+                TextFont {
+                    font_size: FontSize::Px(32.0),
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+            ));
+        });
+}
+
+fn despawn_menu(mut commands: Commands, query: Query<Entity, With<MenuScreen>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
+    }
+}
+
+fn handle_menu_input(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if keyboard.just_pressed(KeyCode::Enter) {
+        next_state.set(GameState::Playing);
     }
 }

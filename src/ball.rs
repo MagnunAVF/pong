@@ -2,13 +2,13 @@ use bevy::prelude::*;
 use rand::RngExt;
 
 use crate::ui::WALL_THICKNESS;
-use crate::{GameState, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::{GameState, InGame, WINDOW_HEIGHT, WINDOW_WIDTH};
 
 pub struct BallPlugin;
 
 impl Plugin for BallPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_ball)
+        app.add_systems(OnEnter(GameState::Playing), spawn_ball)
             .add_systems(
                 Update,
                 (move_ball, bounce_off_walls, check_ball_out)
@@ -104,6 +104,7 @@ pub fn spawn_ball(mut commands: Commands) {
     let velocity = Vec2::new(x_sign * angle.cos(), y_sign * angle.sin()) * BALL_SPEED;
 
     commands.spawn((
+        InGame,
         Ball,
         Velocity(velocity),
         Sprite {
