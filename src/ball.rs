@@ -1,14 +1,19 @@
 use bevy::prelude::*;
 use rand::RngExt;
 
-use crate::GameState;
+use crate::ui::WALL_THICKNESS;
+use crate::{GameState, WINDOW_HEIGHT};
 
 pub struct BallPlugin;
 
 impl Plugin for BallPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_ball)
-            .add_systems(Update, move_ball.run_if(in_state(GameState::Playing)));
+        app.add_systems(Startup, spawn_ball).add_systems(
+            Update,
+            (move_ball, bounce_off_walls)
+                .chain()
+                .run_if(in_state(GameState::Playing)),
+        );
     }
 }
 
@@ -24,6 +29,21 @@ pub struct Velocity(pub Vec2);
 fn move_ball(time: Res<Time>, mut query: Query<(&Velocity, &mut Transform), With<Ball>>) {
     for (velocity, mut transform) in &mut query {
         transform.translation += velocity.0.extend(0.0) * time.delta_secs();
+    }
+}
+
+fn bounce_off_walls(mut query: Query<(&mut Velocity, &mut Transform), With<Ball>>) {
+    let limit = WINDOW_HEIGHT as f32 / 2.0 - WALL_THICKNESS - BALL_SIZE / 2.0;
+
+    for (mut velocity, mut transform) in &mut query {
+        let y = transform.translation.y;
+        if y > limit && velocity.0.y > 0.0 {
+            velocity.0.y = -velocity.0.y;
+            transform.translation.y = limit;
+        } else if y < -limit && velocity.0.y < 0.0 {
+            velocity.0.y = -velocity.0.y;
+            transform.translation.y = -limit;
+        }
     }
 }
 
