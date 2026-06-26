@@ -12,7 +12,14 @@ impl Plugin for UiPlugin {
         )
         .add_systems(OnEnter(GameState::Menu), spawn_menu)
         .add_systems(OnExit(GameState::Menu), despawn_menu)
-        .add_systems(Update, handle_menu_input.run_if(in_state(GameState::Menu)));
+        .add_systems(Update, handle_menu_input.run_if(in_state(GameState::Menu)))
+        .add_systems(OnEnter(GameState::Paused), spawn_pause_screen)
+        .add_systems(OnExit(GameState::Paused), despawn_pause_screen)
+        .add_systems(
+            Update,
+            handle_pause_input
+                .run_if(in_state(GameState::Playing).or_else(in_state(GameState::Paused))),
+        );
     }
 }
 
@@ -22,7 +29,13 @@ const DASH_WIDTH: f32 = 4.0;
 const DASH_HEIGHT: f32 = 15.0;
 const DASH_GAP: f32 = 15.0;
 
-fn spawn_center_line(mut commands: Commands) {
+#[derive(Component)]
+struct CenterLineDash;
+
+fn spawn_center_line(mut commands: Commands, existing: Query<(), With<CenterLineDash>>) {
+    if !existing.is_empty() {
+        return;
+    }
     let half_height = WINDOW_HEIGHT as f32 / 2.0;
     let period = DASH_HEIGHT + DASH_GAP;
     let num_dashes = ((WINDOW_HEIGHT as f32) / period).ceil() as i32 + 1;
@@ -31,6 +44,7 @@ fn spawn_center_line(mut commands: Commands) {
         let y = -half_height + (i as f32) * period + DASH_HEIGHT / 2.0;
         commands.spawn((
             InGame,
+            CenterLineDash,
             Sprite {
                 color: Color::WHITE,
                 custom_size: Some(Vec2::new(DASH_WIDTH, DASH_HEIGHT)),
@@ -48,7 +62,10 @@ pub const WALL_THICKNESS: f32 = 10.0;
 #[derive(Component)]
 pub struct Wall;
 
-fn spawn_walls(mut commands: Commands) {
+fn spawn_walls(mut commands: Commands, existing: Query<(), With<Wall>>) {
+    if !existing.is_empty() {
+        return;
+    }
     let half_height = WINDOW_HEIGHT as f32 / 2.0;
     let wall_size = Vec2::new(WINDOW_WIDTH as f32, WALL_THICKNESS);
 
@@ -118,5 +135,64 @@ fn handle_menu_input(
 ) {
     if keyboard.just_pressed(KeyCode::Enter) {
         next_state.set(GameState::Playing);
+    }
+}
+
+// --- Pause screen ---
+
+#[derive(Component)]
+struct PauseScreen;
+
+fn spawn_pause_screen(mut commands: Commands) {
+    commands
+        .spawn((
+            PauseScreen,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                row_gap: Val::Px(20.0),
+                ..default()
+            },
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new("PAUSED"),
+                TextFont {
+                    font_size: FontSize::Px(72.0),
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+            ));
+            parent.spawn((
+                Text::new("Press Escape to Resume"),
+                TextFont {
+                    font_size: FontSize::Px(28.0),
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+            ));
+        });
+}
+
+fn despawn_pause_screen(mut commands: Commands, query: Query<Entity, With<PauseScreen>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
+    }
+}
+
+fn handle_pause_input(
+    keyboard: Res<ButtonInput<KeyCode>>,
+    state: Res<State<GameState>>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    if keyboard.just_pressed(KeyCode::Escape) {
+        match state.get() {
+            GameState::Playing => next_state.set(GameState::Paused),
+            GameState::Paused => next_state.set(GameState::Playing),
+            _ => {}
+        }
     }
 }

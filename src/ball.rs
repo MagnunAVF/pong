@@ -93,7 +93,10 @@ fn on_ball_exited(
     }
 }
 
-pub fn spawn_ball(mut commands: Commands) {
+pub fn spawn_ball(mut commands: Commands, existing: Query<(), With<Ball>>) {
+    if !existing.is_empty() {
+        return;
+    }
     let mut rng = rand::rng();
 
     // Angle between 30° and 60° from horizontal so the ball is never too flat or too steep

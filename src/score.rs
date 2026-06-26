@@ -34,7 +34,10 @@ enum ScoreDisplay {
     Player2,
 }
 
-fn spawn_score_hud(mut commands: Commands) {
+fn spawn_score_hud(mut commands: Commands, existing: Query<(), With<ScoreDisplay>>) {
+    if !existing.is_empty() {
+        return;
+    }
     let text_font = TextFont {
         font_size: FontSize::Px(64.0),
         ..default()

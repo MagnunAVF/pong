@@ -31,7 +31,10 @@ pub enum Player {
     Two,
 }
 
-fn spawn_paddles(mut commands: Commands) {
+fn spawn_paddles(mut commands: Commands, existing: Query<(), With<Paddle>>) {
+    if !existing.is_empty() {
+        return;
+    }
     let half_width = WINDOW_WIDTH as f32 / 2.0;
     let size = Vec2::new(PADDLE_WIDTH, PADDLE_HEIGHT);
 
